@@ -16,22 +16,22 @@ import static java.nio.file.StandardOpenOption.APPEND;
 
 public class CsvWriter<T> implements Flushable, Closeable {
 	
-	private final BufferedWriter buffer;
+  private final BufferedWriter buffer;
 	
-	public CsvWriter(Path output, Class<T> clazz) throws IOException {
+  public CsvWriter(Path output, Class<T> clazz) throws IOException {
     if (!clazz.isAnnotationPresent(CsvSerializable.class)) {
       throw new IllegalArgumentException("The given class is not a csv serializable class");
     }
     var header = Files.notExists(output) ? getHeader(clazz) : "";
-		buffer = Files.newBufferedWriter(output, CREATE, APPEND);
+    buffer = Files.newBufferedWriter(output, CREATE, APPEND);
     buffer.write(header);
-	}
+  }
 
-	public void write(Iterable<T> objects) throws IOException {
+  public void write(Iterable<T> objects) throws IOException {
     for (var object : objects) {
       buffer.write(getRow(object));
     }
-	}
+  }
 
   @Override
   public void flush() throws IOException {
@@ -43,38 +43,38 @@ public class CsvWriter<T> implements Flushable, Closeable {
     buffer.close();
   }
 
-	private String getHeader(Class<?> clazz) {
-		return getFields(clazz)
-			.stream()
-			.map(field -> field.getName())
-			.collect(joining(","))
+  private String getHeader(Class<?> clazz) {
+    return getFields(clazz)
+      .stream()
+      .map(field -> field.getName())
+      .collect(joining(","))
       .concat("\n");
-	}
+  }
 
   private String getRow(Object object) {
-		var fields = getFields(object.getClass());
-		var values = getFieldValues(fields, object);
-		return values.stream().collect(joining(",")).concat("\n");
-	}
+    var fields = getFields(object.getClass());
+    var values = getFieldValues(fields, object);
+    return values.stream().collect(joining(",")).concat("\n");
+  }
 
-	private List<Field> getFields(Class<?> clazz) {
-		return Arrays
-			.stream(clazz.getDeclaredFields())
-			.filter(field -> field.isAnnotationPresent(CsvColumn.class))
-			.peek(field -> field.setAccessible(true))
-			.toList();
-	}
+  private List<Field> getFields(Class<?> clazz) {
+    return Arrays
+      .stream(clazz.getDeclaredFields())
+      .filter(field -> field.isAnnotationPresent(CsvColumn.class))
+      .peek(field -> field.setAccessible(true))
+      .toList();
+  }
 	
-	private List<String> getFieldValues(List<Field> fields, Object object) {
-		var values = new ArrayList<String>();
-		for (var field : fields) {
-			try {
-				values.add(field.get(object).toString());
-			} catch (IllegalArgumentException | IllegalAccessException ex) {
-				throw new IllegalStateException(ex);
-			}
-		}
-		return values;
-	}
+  private List<String> getFieldValues(List<Field> fields, Object object) {
+    var values = new ArrayList<String>();
+    for (var field : fields) {
+      try {
+        values.add(field.get(object).toString());
+      } catch (IllegalArgumentException | IllegalAccessException ex) {
+        throw new IllegalStateException(ex);
+      }
+    }
+    return values;
+  }
 
 }
